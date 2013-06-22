@@ -1,0 +1,7 @@
+RUBY_VERSION = ruby-1.9.3-p429
+RUBY_INCLUDE_PATH = $(HOME)/.rvm/rubies/$(RUBY_VERSION)/include/ruby-1.9.1 $(HOME)/.rvm/rubies/$(RUBY_VERSION)/include/ruby-1.9.1/x86_64-darwin11.4.2
+RUBY_LDFLAGS = -L$(HOME)/.rvm/rubies/$(RUBY_VERSION)/lib -lruby
+
+EXT_INCLUDE_PATH = $(RUBY_INCLUDE_PATH) /usr/local/Cellar/libimobiledevice/1.1.5/include /usr/local/Cellar/libplist/1.10/include /usr/local/Cellar/libxml2/2.9.1/include/libxml2 /usr/local/Cellar/usbmuxd/1.0.8/include
+
+EXT_LDFLAGS = $(RUBY_LDFLAGS) -L/usr/local/Cellar/libimobiledevice/1.1.5/lib -L/usr/local/Cellar/libplist/1.10/lib -L/usr/local/Cellar/usbmuxd/1.0.8/lib -limobiledevice -lplist -lusbmuxd -lssl -lcrypto -lz
