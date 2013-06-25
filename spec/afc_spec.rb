@@ -50,8 +50,8 @@ describe IO::AFC do
 
       it "should be getattr for directory (Time)." do
         attr = @afc.getattr("/tempdir")
-        expect(attr[:st_birthtime].to_i).to eq(@now.to_i)
-        expect(attr[:st_mtime].to_i).to eq(@now.to_i)
+        expect(attr[:st_birthtime].to_i).to be_within(@now.to_i+10).of(@now.to_i-10)
+        expect(attr[:st_mtime].to_i).to be_within(@now.to_i+10).of(@now.to_i+10)
       end
 
       it "should be mkdir, rename and unlink subdir." do
