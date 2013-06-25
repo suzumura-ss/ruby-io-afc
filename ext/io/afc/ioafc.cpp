@@ -624,7 +624,10 @@ VALUE IoAFCDescriptor::read(VALUE rb_size)
 VALUE IoAFCDescriptor::write(VALUE rb_data)
 {
     checkHandle();
-    
+
+    if (NIL_P(rb_data)) {
+        return INT2FIX(0);
+    }    
     const char* data = rb_string_value_ptr(&rb_data);
     off_t size = NUM2ULL(rb_str_length(rb_data));
     if (size==0) {

@@ -42,6 +42,15 @@ describe IO::AFCBase do
         expect(size).to eq(2)
       end
 
+      it "should be write 0 bytes when data is nil." do
+        f = IO::AFCBase::Descriptor.new(@afc, "/tempfile", 2)
+        begin
+          expect(f.write(nil)).to eq(0)
+        ensure
+          f.close
+        end
+      end
+
       after do
         @afc.unlink("/tempfile") rescue nil
         @afc.close
