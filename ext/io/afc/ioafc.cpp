@@ -66,7 +66,9 @@ static void rb_raise_SystemCallErrorAFC(afc_error_t err)
         {AFC_E_READ_ERROR           , ENOTDIR},
         {AFC_E_WRITE_ERROR          , EIO},
         {AFC_E_UNKNOWN_PACKET_TYPE  , EIO},
+#ifdef AFC_E_INVALID_ARG
         {AFC_E_INVALID_ARG          , EINVAL},
+#endif
         {AFC_E_OBJECT_NOT_FOUND     , ENOENT},
         {AFC_E_OBJECT_IS_DIR        , EISDIR},
         {AFC_E_DIR_NOT_EMPTY        , ENOTEMPTY},
@@ -121,8 +123,10 @@ IoAFC::IoAFC()
     _blocksize = 4096;
     _idev = NULL;
     _control = NULL;
+#ifdef HAVE_LIBIMOBILEDEVICE_HOUSE_ARREST_H
     _house_arrest = NULL;
-    _port = NULL;
+#endif
+    _port = LOCKDOWND_INVALID_PORT;
     _afc = NULL;
 }
 
@@ -139,12 +143,16 @@ void IoAFC::teardown()
 {
     DBG("- IO::AFC: %p\n", _afc);
     if (_afc) afc_client_free(_afc);
+#ifdef HAVE_LOCKDOWND_SERVICE_DESCRIPTOR_FREE
     if (_port) lockdownd_service_descriptor_free(_port);
+#endif
+#ifdef HAVE_LIBIMOBILEDEVICE_HOUSE_ARREST_H
     if (_house_arrest) house_arrest_client_free(_house_arrest);
+#endif
     if (_control) lockdownd_client_free(_control);
     if (_idev) idevice_free(_idev);
     _afc = NULL;
-    _port = NULL;
+    _port = LOCKDOWND_INVALID_PORT;
     _house_arrest = NULL;
     _control = NULL;
     _idev = NULL;
@@ -195,8 +203,9 @@ void IoAFC::init(VALUE rb_device_uuid, VALUE rb_appid)
         teardown();
         rb_raise(rb_eConnectFailed, "Failed to start %s service.", _service_name);
     }
-    
+
     if (appid) {
+#ifdef HAVE_LIBIMOBILEDEVICE_HOUSE_ARREST_H
         // check document foider?
         house_arrest_client_new(_idev, _port, &_house_arrest);
         if (!_house_arrest) {
@@ -231,13 +240,21 @@ void IoAFC::init(VALUE rb_device_uuid, VALUE rb_appid)
             rb_raise(rb_eConnectFailed, "Error: %s", _errmsg.c_str());
         }
         plist_free(dict);
+#else
+        teardown();
+        rb_raise(rb_eStandardError, "Document sharing servce is not supported. Please use more recent libimobiledevice.");
+#endif
     }
     
+#ifdef HAVE_LIBIMOBILEDEVICE_HOUSE_ARREST_H
     if (_house_arrest) {
         afc_client_new_from_house_arrest_client(_house_arrest, &_afc);
     } else {
+#endif
         afc_client_new(_idev, _port, &_afc);
+#ifdef HAVE_LIBIMOBILEDEVICE_HOUSE_ARREST_H
     }
+#endif
     
     if (!_afc) {
         teardown();
@@ -417,7 +434,7 @@ VALUE IoAFC::mkdir(VALUE rb_path)
 VALUE IoAFC::get_device_udid()
 {
     checkHandle();
-    
+#ifdef HAVE_LOCKDOWND_GET_DEVICE_UDID
     char* udid = NULL;
     lockdownd_error_t le = lockdownd_get_device_udid(_control, &udid);
     if (le!=LOCKDOWN_E_SUCCESS) {
@@ -429,6 +446,9 @@ VALUE IoAFC::get_device_udid()
         ::free(udid);
     }
     return result;
+#else
+    rb_raise(rb_eStandardError, "get_device_udid() is not supported. Please use more recent libimobiledevice.");
+#endif
 }
 
 
@@ -468,7 +488,7 @@ VALUE IoAFC::enum_applications()
 {
     checkHandle();
     
-    lockdownd_service_descriptor_t port = NULL;
+    LOCKDOWND_PORT port = LOCKDOWND_INVALID_PORT;
     lockdownd_error_t le = lockdownd_start_service(_control, INSTALLATION_PROXY_SERVICE_NAME, &port);
     if ((le!=LOCKDOWN_E_SUCCESS) || (port==0)) {
         rb_raise(rb_eConnectFailed, "Failed to start %s service.", INSTALLATION_PROXY_SERVICE_NAME);
@@ -477,14 +497,18 @@ VALUE IoAFC::enum_applications()
     instproxy_client_t client = NULL;
     instproxy_error_t ie = instproxy_client_new(_idev, port, &client);
     if ((ie!=INSTPROXY_E_SUCCESS) || (client==NULL)) {
+#ifdef HAVE_LOCKDOWND_SERVICE_DESCRIPTOR_FREE
         lockdownd_service_descriptor_free(port);
+#endif
         rb_raise(rb_eRuntimeError, "instproxy_client_new() failed - %d", ie);
     }
     
     plist_t client_opts = instproxy_client_options_new();
     if (client_opts==NULL) {
         instproxy_client_free(client);
+#ifdef HAVE_LOCKDOWND_SERVICE_DESCRIPTOR_FREE
         lockdownd_service_descriptor_free(port);
+#endif
         rb_raise(rb_eRuntimeError, "instproxy_client_options_new() failed");
     }
     
@@ -493,7 +517,9 @@ VALUE IoAFC::enum_applications()
     ie = instproxy_browse(client, client_opts, &apps);
     instproxy_client_options_free(client_opts);
     instproxy_client_free(client);
+#ifdef HAVE_LOCKDOWND_SERVICE_DESCRIPTOR_FREE
     lockdownd_service_descriptor_free(port);
+#endif
     if (ie!=INSTPROXY_E_SUCCESS) {
         rb_raise(rb_eRuntimeError, "instproxy_browse() failed - %d", ie);
     }

@@ -19,8 +19,21 @@
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/afc.h>
-#include <libimobiledevice/house_arrest.h>
 #include <libimobiledevice/installation_proxy.h>
+
+#ifdef HAVE_LIBIMOBILEDEVICE_HOUSE_ARREST_H
+#include <libimobiledevice/house_arrest.h>
+#else
+typedef void*   house_arrest_client_t;
+#endif
+
+#ifdef HAVE_LOCKDOWND_SERVICE_DESCRIPTOR_FREE
+typedef lockdownd_service_descriptor_t LOCKDOWND_PORT;
+#   define LOCKDOWND_INVALID_PORT   (NULL)
+#else
+typedef uint16_t LOCKDOWND_PORT;
+#   define LOCKDOWND_INVALID_PORT   0
+#endif
 
 
 #define DBG(...)    //printf(__VA_ARGS__)
@@ -34,7 +47,7 @@ protected:
     off_t               _blocksize; //= 4096
     idevice_t           _idev;
     lockdownd_client_t  _control;
-    lockdownd_service_descriptor_t _port;
+    LOCKDOWND_PORT      _port;
     afc_client_t        _afc;
     house_arrest_client_t _house_arrest;
 
