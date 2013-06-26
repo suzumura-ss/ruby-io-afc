@@ -23,8 +23,9 @@ public
 
   ##
   # Connect to iOS-Device and yield block with handle if specified.
-  # @option [:uuid=>String] Target UUID. if nil, connect to default device.
-  # @option [:appid=>String] Mount application document folder if specified.
+  # @param [Hash] opt options for connect device.
+  # @option opt [String] :uuid Target UUID. if nil, connect to default device.
+  # @option opt [String] :appid Mount application's document folder if specified.
   # @return [IO::AFC or block-result]
   def self.connect(opt={}, &block)
     dev = self.new(opt[:udid], opt[:appid])
@@ -43,21 +44,20 @@ public
   ##
   # Get storage info.
   # @return [Hash]
-  #
-  # Example:
-  # afc.statfs
-  # => {:FSBlockSize=>4096,
-  # :FSFreeBytes=>27478216704,
-  # :FSTotalBytes=>30178787328,
-  # :Model=>"iPod5,1"}
+  # @example
+  #     afc.statfs
+  #     => {:FSBlockSize=>4096,
+  #     :FSFreeBytes=>27478216704,
+  #     :FSTotalBytes=>30178787328,
+  #     :Model=>"iPod5,1"}
   def statfs
     dict_to_hash(super)
   end
 
   ##
   # Open file.
-  # @param [String] path for target file.
-  # @param [IO::Constants] mode for open mode. Default is IO::RDONLY.
+  # @param [String] path pathname for target file.
+  # @param [IO::Constants] mode for open mode.
   def open(path, mode = IO::RDONLY, &block)
     raise ArgumentError, "block is required." unless block_given?
     File.open_file(self, path, mode, &block)
@@ -65,25 +65,23 @@ public
 
   ##
   # Get file/directory attribytes.
-  # @param [String] path.
+  # @param [String] path pathname for get attributes.
   # @return [Hash]
-  #
-  # Example:
-  # afc.getattr("/Safari")
-  # => {:st_birthtime=>2012-12-17 12:28:23 +0900,
-  # :st_mtime=>2013-06-22 20:32:01 +0900
-  # :st_ifmt=>"S_IFDIR",
-  # :st_nlink=>2,
-  # :st_blocks=>0,
-  # :st_size=>102}
-  #
-  # afc.getattr("/Safari/goog-phish-shavar.db")
-  # => {:st_birthtime=>2013-06-21 02:31:17 +0900,
-  # :st_mtime=>2013-06-21 02:31:18 +0900,
-  # :st_ifmt=>"S_IFREG",
-  # :st_nlink=>1,
-  # :st_blocks=>11256,
-  # :st_size=>5763072}
+  # @example
+  #     afc.getattr("/Safari")
+  #     => {:st_birthtime=>2012-12-17 12:28:23 +0900,
+  #     :st_mtime=>2013-06-22 20:32:01 +0900
+  #     :st_ifmt=>"S_IFDIR",
+  #     :st_nlink=>2,
+  #     :st_blocks=>0,
+  #     :st_size=>102}
+  #     afc.getattr("/Safari/goog-phish-shavar.db")
+  #     => {:st_birthtime=>2013-06-21 02:31:17 +0900,
+  #     :st_mtime=>2013-06-21 02:31:18 +0900,
+  #     :st_ifmt=>"S_IFREG",
+  #     :st_nlink=>1,
+  #     :st_blocks=>11256,
+  #     :st_size=>5763072}
   def getattr(path)
     r = dict_to_hash(super(path))
     [:st_birthtime, :st_mtime].each{|k|
@@ -94,7 +92,7 @@ public
 
   ##
   # Check exist
-  # @param [String] path.
+  # @param [String] path pathname for check exists.
   # @return [String or nil] return type or nil.
   def exist?(path)
     begin
@@ -106,7 +104,7 @@ public
 
   ##
   # Read symlink.
-  # @param [String] path.
+  # @param [String] path pathname for read symlink.
   # @return [String or nil] return symlink-target.
   def readlink(path)
     getattr(path)[:LinkTarget]
