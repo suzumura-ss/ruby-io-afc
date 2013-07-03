@@ -474,6 +474,9 @@ VALUE IoAFC::get_evice_display_name()
 
 static VALUE plist_string_to_rb_string(plist_t node)
 {
+    if (node==NULL) {
+        return Qnil;
+    }
     char* s = NULL;
     plist_get_string_val(node, &s);
     if (s==NULL) {
