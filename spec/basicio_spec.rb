@@ -63,7 +63,9 @@ describe IO::AFCBase do
         apps.each{|app, val|
           expect(app).to be_an_instance_of(String)
           expect(val).to be_an_instance_of(Hash)
-          expect(val["CFBundleDisplayName"]).to be_an_instance_of(String)
+          unless val["CFBundleDisplayName"].nil?
+            expect(val["CFBundleDisplayName"]).to be_an_instance_of(String)
+          end
           expect([true, false]).to include(val["UIFileSharingEnabled"])
         }
       end
